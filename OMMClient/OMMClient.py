@@ -2,7 +2,7 @@ from threading import Thread, Event, Lock
 from time import sleep
 from events import Events
 
-from .types import LastPPAction, PPDev, PPUser
+from .types import LastPPAction, PPDev, PPUser, RFP
 from .utils import encrypt_pin
 from .messagehelper import construct_message, parse_message
 import socket
@@ -46,7 +46,7 @@ class OMMClient(Events):
         self._tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._tcp_socket.settimeout(10)
         self._ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLSv1_2)
-        self._ssl_context.set_ciphers("AES256-GCM-SHA384")
+        self._ssl_context.set_ciphers("DEFAULT")
         self._ssl_socket = self._ssl_context.wrap_socket(self._tcp_socket, server_hostname=self._host)
         self._send_q = queue.Queue()  # should contains strings (not bytes)
         self._recv_q = queue.Queue()  # should contains strings (not bytes)
@@ -293,6 +293,73 @@ class OMMClient(Events):
             return device
         else:
             return None
+
+    def get_rfps(self, start_rfp=0, with_state=False, with_details=False):
+        """ get all rfp records
+
+        Obtain all RFPs, one by one (only making as many queries as necessary).
+
+        Args:
+            start_rfp (int): the lowest RFP id to fetch (fetches next higher one if the given is does not exist)
+            with_state (Boolean): if set you also get transient keys, like if the RFP is connected right now
+            with_details (Boolean): if set the RFP object get three more advanced keys
+
+        Returns:
+            A generator that yields rfp records, one at a time.
+        """
+        MAX_RECORDS = 3  # maximum possible request size, according to the AXI documentation
+        while True:
+            message, attributes, children = self._sendrequest(
+                "GetRFP",
+                {"seq": self._get_sequence(), "id": start_rfp, "maxRecords": MAX_RECORDS, "withState": "true" if with_state else "false", "withDetails": "true" if with_details else "false"
+                })
+            if children is None or "rfpStatData" not in children or not children["rfpStatData"]:
+                break
+
+            if not isinstance(children['rfp'], list):
+                children['rfp'] = [children['rfp']]
+
+            for child in children['rfp']:
+                device = RFP(self, child)
+                yield device
+
+            if len(children['rfp']) == MAX_RECORDS:
+                # response was as large as it could be, so maybe there are more records
+                start_rfp = int(children['rfp'][-1]['id'])+1
+            else:
+                break
+        return attributes
+
+    def get_rfp_statistics(self, rfp_id, record_set=0):
+        """ get all rfp records
+
+        Obtain all RFPs, one by one (only making as many queries as necessary).
+
+        Args:
+            rfp_id (int): the id of the RFP to fetch from
+            record_set (int): Record set to read. Record 0 identifies the overall counter, 1 the current week, 2 the week before the current week and so on.
+
+        Returns:
+            A dictionary of the statistics in the format group.key = value
+        """
+        message, attributes, children = self._sendrequest(
+            "GetRFPStatistic",
+            {"seq": self._get_sequence(), "id": rfp_id, "maxRecords": 1, "recordSet": record_set
+            })
+        #return children['rfpStatData']['counter'].split[',']
+        result = children['rfpStatData']['counter'].split(',')
+        message, attributes, children = self._sendrequest(
+            "GetRFPStatisticConfig",
+            {"seq": self._get_sequence(), "id": rfp_id, "maxRecords": 1, "recordSet": record_set
+            })
+        i = 0
+        rtn = {}
+        for child in children["rfpStatName"]:
+            if not child["group"] in rtn:
+                rtn[child["group"]] = {}
+            rtn[child["group"]].update( {child["name"]: result[i]})
+            i = i + 1
+        return rtn
 
     def get_devices(self, start_ppn=0):
         """ get all device data records
