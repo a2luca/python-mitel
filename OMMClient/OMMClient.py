@@ -346,7 +346,7 @@ class OMMClient(Events):
                 "GetRFP",
                 {"seq": self._get_sequence(), "id": start_rfp, "maxRecords": MAX_RECORDS, "withState": "true" if with_state else "false", "withDetails": "true" if with_details else "false"
                 })
-            if children is None or "rfpStatData" not in children or not children["rfpStatData"]:
+            if children is None or "rfp" not in children or not children["rfp"]:
                 break
 
             if not isinstance(children['rfp'], list):
