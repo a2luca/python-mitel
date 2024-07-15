@@ -45,6 +45,7 @@ came up with a vendor api documentation which can be found here:
 - Build a custom yate-script to login a user profile to a PP
 - Keep the system in wildcard registration mode
 - Synchronisation of user profiles from external data source
+- get statistics for monitoring system like prometheus
 
 ## Implemented Features:
 ### System-Wide
@@ -58,6 +59,11 @@ came up with a vendor api documentation which can be found here:
 - Get OMM User Account by ID
 - Login Default and Login as OMM-Sync
 
+## RFP (Radio Fixed Part)
+- Get RFPs with current state
+- Get RFPs Summary
+- Get RFP Statistics
+
 ### Users (User Profiles)
 - Create new user profile
 - Get User by ID
@@ -67,10 +73,12 @@ came up with a vendor api documentation which can be found here:
 - Convert User-Device Relation to Fixed
 - Convert User-Device Relation to Dynamic
 - Delete User by ID
+- Get Users Summary
 
 ### Devices (Protable Parts)
 - Delete Device (PP)
 - Get Device State
+- Get PPs Summary
 
 ## Usage example:
 The following example logs into OMM and executes some operations.

@@ -180,6 +180,39 @@ class OMMClient(Events):
         message, attributes, children = self._sendrequest("GetSARI")
         return attributes.get("sari")
 
+    def get_rfp_summary(self):
+        """ Fetches the sumary for RFPs
+
+        Returns:
+            Disctionary containing key, value pairs
+
+        """
+        self._ensure_login()
+        message, attributes, children = self._sendrequest("GetRFPSummary")
+        return attributes
+
+    def get_pp_summary(self):
+        """ Fetches the sumary for PPs
+
+        Returns:
+            Disctionary containing key, value pairs
+
+        """
+        self._ensure_login()
+        message, attributes, children = self._sendrequest("GetPPDevSummary")
+        return attributes
+
+    def get_user_summary(self):
+        """ Fetches the sumary for Users
+
+        Returns:
+            Disctionary containing key, value pairs
+
+        """
+        self._ensure_login()
+        message, attributes, children = self._sendrequest("GetPPUserSummary")
+        return attributes
+
     def get_systemname(self):
         """ Fetches the OMM system name
 
